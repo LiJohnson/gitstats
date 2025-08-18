@@ -5,7 +5,7 @@ on:
     paths:
       - '**/*.py'
       - 'pyproject.toml'
-      - 'gitstats.conf'
+      - 'gitstats/*'
       - '.github/workflows/test.yml'
   push:
     branches:
@@ -13,6 +13,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  test-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+    - name: Build Docs
+      run: |
+        pip install nox
+        nox -s docs
+
   test-windows:
     runs-on: windows-latest
     strategy:
@@ -26,7 +40,7 @@ jobs:
         fetch-depth: 0 # get all history.
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -42,14 +56,14 @@ jobs:
         .\venv\Scripts\activate.bat
         # for testing
         pip install .
-        gitstats . gitstats-report-windows
+        gitstats . test-report-windows -f json
 
     - name: Save GitStats Report
       if: ${{ matrix.python-version == '3.9' }}
       uses: actions/upload-artifact@v4
       with:
-        name: gitstats-report-windows
-        path: gitstats-report-windows
+        name: test-report-windows
+        path: test-report-windows
 
   test-macos:
     runs-on: macos-latest
@@ -64,7 +78,7 @@ jobs:
         fetch-depth: 0 # get all history.
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -78,20 +92,20 @@ jobs:
         source venv/bin/activate
         # for testing
         pip install .
-        gitstats . gitstats-report-macos
+        gitstats . test-report-macos -f json
 
     - name: Save GitStats Report
       if: ${{ matrix.python-version == '3.9' }}
       uses: actions/upload-artifact@v4
       with:
-        name: gitstats-report-macos
-        path: gitstats-report-macos
+        name: test-report-macos
+        path: test-report-macos
 
   test-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14.0-beta.1"]
 
     steps:
     - name: Checkout Code
@@ -100,36 +114,33 @@ jobs:
         fetch-depth: 0 # get all history.
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gnuplot
+        pip install nox
+        nox -s install-deps
 
     - name: Generate GitStats Report
       run: |
-        python3 -m venv venv
-        source venv/bin/activate
-        # for testing
-        pip install .
-        gitstats . gitstats-report
+        pip install nox
+        nox -s build
 
     - name: Save GitStats Report
       if: ${{ matrix.python-version == '3.9' }}
       uses: actions/upload-artifact@v4
       with:
-        name: gitstats-report
-        path: gitstats-report
+        name: test-report
+        path: test-report
 
     - name: Deploy to GitHub Pages for PR
       if: ${{ github.event_name == 'pull_request' && matrix.python-version == '3.9' }}
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: gitstats-report
+        publish_dir: test-report
         # Configure a unique preview link for each pull request
         destination_dir: previews/${{ github.event.pull_request.number }}
 
@@ -138,7 +149,7 @@ jobs:
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: gitstats-report
+        publish_dir: test-report
         keep_files: true # do not remove example reports
 
     - name: Add PR Comment with Preview Link

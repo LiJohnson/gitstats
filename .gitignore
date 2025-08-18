@@ -1,8 +1,11 @@
 venv/
 .venv/
+__pycache__
 gitstats/__pycache__/
 gitstats.egg-info
 gitstory.egg-info
 build/
 gitstats-report
 test-report
+test-report.json
+docs/build

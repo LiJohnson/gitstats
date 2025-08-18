@@ -7,10 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gnuplot \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install GitStats with optional version support
-RUN pip3 install gitstats${VERSION:+==$VERSION}
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install gitstats${VERSION:+==$VERSION}
 
 USER nobody
 
@@ -18,5 +16,5 @@ ENTRYPOINT [ "gitstats"]
 
 # Add metadata labels
 LABEL org.opencontainers.image.source="https://github.com/shenxianpeng/gitstats" \
-      org.opencontainers.image.description="GitStats - generates visual reports for git repositories" \
+      org.opencontainers.image.description="GitStats - Visualize Your Git Repositories" \
       org.opencontainers.image.licenses="GPLv3"
